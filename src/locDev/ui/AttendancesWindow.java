@@ -43,8 +43,6 @@ import locDev.types.Shift;
 import locDev.ui.handlers.CloseAttendancesHandler;
 import locDev.ui.handlers.GenerateTableHandler;
 import locDev.ui.handlers.ReadTableHandler;
-import locDev.util.converter.ConvertWeekday;
-
 /**
  * 
  */
@@ -105,9 +103,7 @@ public class AttendancesWindow extends JFrame {
 		Map<String,Shift> map = this.courseManager.getShifts();
 		this.pnlCenter = new JPanel(new GridLayout(map.size(), 1));
 		for(Shift shift : map.values()) {
-			this.pnlCenter.add(new JCheckBox(shift.getShiftName() + "-" +
-					                         ConvertWeekday.convert(shift.getWeekday()) + "-" + 
-					                         shift.getStartTime()));
+			this.pnlCenter.add(new JCheckBox(shift.getShiftName()));
 		}
 		this.getContentPane().add(this.pnlCenter,BorderLayout.CENTER);
 		

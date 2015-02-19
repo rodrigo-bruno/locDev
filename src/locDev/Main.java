@@ -95,10 +95,6 @@ public class Main {
 
 	}
 
-	public static void TestLoadByURL(CourseManager course, String url) {
-		locDevCore.processCourseURL(course, url);
-	}
-	
 	public static void TestProcessReadAttendanceCSV(String path, CourseManager course) {
 		try {
 			locDevCore.processStudentAttendances(path, course);

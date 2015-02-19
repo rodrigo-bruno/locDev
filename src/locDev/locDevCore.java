@@ -42,22 +42,13 @@ import locDev.exceptions.NotTheSameCourseInfoException;
 import locDev.types.Shift;
 import locDev.types.StudentAttendance;
 import locDev.types.Time;
-import locDev.util.FenixParser;
 import locDev.util.FileOperations;
 import locDev.util.ProcessRouterOutput;
 import locDev.util.converter.ConvertCalendar;
 import locDev.util.converter.ConvertDate;
 
 public class locDevCore {
-	/**
-	 * constant string to indicate the csv is in the buffer
-	 * not allowed the following chars: '\' or '/'.
-	 */
-	public static final String BUFFER_FILE = "File in buffer";
-	/**
-	 * name used for the student list file
-	 */
-	public static final String NAME_BY_DEFAULT = "students_list.csv";
+
 	/**
 	 * This read all the presence files of the given shifts and 
 	 * return a structure with that information
@@ -76,7 +67,7 @@ public class locDevCore {
 					    + "/course/shifts/"
 					    + s.getShiftName() + "/"
 					    + s.getStudentsListPath();
-			FileOperations.readRouterStudentsFile(path, map);
+			FileOperations.readStudentList(path, map);
 		}
 		//process the folders of the router
 		ProcessRouterOutput.readShiftsAttendance(course.getCourseConfigurationDirectoryPath() + "/course", shifts, map);
@@ -92,6 +83,7 @@ public class locDevCore {
 	 * @throws InvalidFormatMetaInfoFileException
 	 * @throws NotTheSameCourseInfoException
 	 */
+	// FIXME - needed? main -> attendances -> upload students attendance info.
 	public static void processStudentAttendances(String path, CourseManager course) 
 			throws InvalidFormatMetaInfoFileException, NotTheSameCourseInfoException {
 		String config_path = course.getCourseConfigurationDirectoryPath();
@@ -111,7 +103,7 @@ public class locDevCore {
 						BufferedReader reader = new BufferedReader(new FileReader(new File(date_path)));
 						String line;
 						while((line = reader.readLine()) != null) {
-							String[] tokens = line.split(";");
+							String[] tokens = line.split(";"); // FIXME
 							for(String token : tokens)
 								students_went.add(token);
 						}
@@ -130,45 +122,7 @@ public class locDevCore {
 			}
 		}
 	}
-	/**
-	 * Update the course information parsing the course url
-	 * This only works for the fenix url. It depends on the structure of the 
-	 * fenix's pages.
-	 * @param course
-	 * 	class with course information
-	 * @param home_url
-	 *  course url
-	 */
-	public static void processCourseURL(CourseManager course, String home_url) {
-		// Student list
-		try {
-			// Register Shifts
-			FenixParser.getShifts(home_url, course, BUFFER_FILE);
-			//Mark Page
-			String mark_page = FenixParser.getMarksPage(home_url);
-			Map<String, String> students = FenixParser.getStudentsTable(mark_page);
-			//For each shift save in buffer
-			for(Shift shift : course.getShifts().values()) {
-				int max = locDevCore.generateDatesofShift(course.getCourseStartDate(),
-						                        course.getCourseEndDate(),
-						                        shift.getWeekday(), 
-						                        shift.getStartTime()).size();
-				StringBuilder sb = new StringBuilder();
-				sb.append("Number;Name;Max Presences\n");
-				for(String student : students.keySet()) {
-					sb.append(student);
-					sb.append(";");
-					sb.append(students.get(student));
-					sb.append(";");
-					sb.append(max);
-					sb.append("\n");
-				}
-				course.setBufferFile(shift.getShiftName(),sb.toString());				
-			}
-		} catch (IOException e) {
-			throw new RuntimeException("locDevCore - processCourseURL - I/O erros.");
-		}
-	}
+
 	/**
 	 * With the course information and the students' presence structure
 	 * this function generate the attendance csv
@@ -255,29 +209,20 @@ public class locDevCore {
 					shift.getWeekday(),
 					shift.getStartTime());
 			//Fourth Level
-			if(shift.getStudentsListPath().equals(BUFFER_FILE)) {
-				try {
-					BufferedWriter writer = new BufferedWriter(
-							new FileWriter(new File(tmp_path + "/" + NAME_BY_DEFAULT)));
-					writer.write(course.getBufferFile(shift.getShiftName()));
-					writer.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
+			String[] tokens = shift.getStudentsListPath().split("[/|\\\\]"); // TODO - shouln't it be just a file copy?
+			if(tokens.length != 1) {
+				FileOperations.generateStudentListCSV(
+						shift.getStudentsListPath(), 
+						tmp_path + "/" + tokens[tokens.length - 1], 
+						dates.size());
 			}
-			else {
-				String[] tokens = shift.getStudentsListPath().split("[/|\\\\]");
-				if(tokens.length != 1)
-					FileOperations.generateStudentListCSV(
-							shift.getStudentsListPath(), 
-							tmp_path + "/" + tokens[tokens.length - 1], 
-							dates.size());
-				else 
-					FileOperations.generateStudentListCSV(
-							old_path + shift.getShiftName() + "/" + tokens[tokens.length - 1], 
-							tmp_path + "/" + tokens[tokens.length - 1],
-							dates.size());
+			else { 
+				FileOperations.generateStudentListCSV(
+						old_path + shift.getShiftName() + "/" + tokens[tokens.length - 1], 
+						tmp_path + "/" + tokens[tokens.length - 1],
+						dates.size());
 			}
+			
 			for(String date : dates) {
 				new File(tmp_path + "/" + date).mkdir();
 				//Fifth Level

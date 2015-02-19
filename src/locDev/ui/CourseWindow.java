@@ -47,7 +47,6 @@ import locDev.ui.handlers.AddShiftHandler;
 import locDev.ui.handlers.CloseCreateCourseHandler;
 import locDev.ui.handlers.EditShiftHandler;
 import locDev.ui.handlers.ListShiftsHandler;
-import locDev.ui.handlers.LoadCourseByURLHandler;
 import locDev.ui.handlers.LoadCourseHandler;
 import locDev.ui.handlers.SaveCourseHandler;
 import locDev.ui.handlers.RemoveShiftHandler;
@@ -170,8 +169,7 @@ public class CourseWindow extends JFrame {
 	private JButton btnAddShift;
 	private JButton btnEditShift;
 	private JButton btnStudentsList;
-	private JButton btnLoadCourseByURL;
-	
+		
 	/**
 	 * Sets the window up.
 	 */
@@ -288,7 +286,6 @@ public class CourseWindow extends JFrame {
 		this.btnEditShift = new JButton("Update Shift");
 		this.btnDeleteShift = new JButton("Delete Shift");
 		this.btnLoadCourseByRouterFolder = new JButton("Load Course");
-		this.btnLoadCourseByURL = new JButton("Fetch Shifts From Fenix");
 		this.btnSaveCourse.addActionListener(new SaveCourseHandler());
 		this.btnAddShift.addActionListener(new AddShiftHandler());
 		this.btnEditShift.addActionListener(new EditShiftHandler());
@@ -296,11 +293,9 @@ public class CourseWindow extends JFrame {
 				new CloseCreateCourseHandler());
 		this.btnDeleteShift.addActionListener(new RemoveShiftHandler());
 		this.btnLoadCourseByRouterFolder.addActionListener(new LoadCourseHandler());
-		this.btnLoadCourseByURL.addActionListener(new LoadCourseByURLHandler());
 		this.pnlSouth.add(this.btnAddShift);
 		this.pnlSouth.add(this.btnEditShift);
 		this.pnlSouth.add(this.btnDeleteShift);
-		this.pnlSouth.add(this.btnLoadCourseByURL);
 		this.pnlSouth.add(this.btnLoadCourseByRouterFolder);
 		this.pnlSouth.add(this.btnSaveCourse);
 		this.pnlSouth.add(this.btnCancel);

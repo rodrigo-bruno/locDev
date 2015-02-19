@@ -31,7 +31,6 @@ import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
 import java.util.Calendar;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -51,67 +50,52 @@ import locDev.util.converter.ConvertWeekday;
 
 public class FileOperations {
 
-	private static String CVS_SEPARATOR = ",";
+	private static String CSV_SEPARATOR = ",";
+	private static String ROUTER_INFO_SEPARATOR = ";";
 	
 	/**
-	 * load the student list, the expected format is csv from fenix
+	 * load the student list.
+	 * Expected format:
+	 * ID,Name,Max
+	 * 67074,Rodrigo Bruno,20
+	 * ...
 	 * @param path
 	 * 	path until the csv file
 	 */
-	public static void readRouterStudentsFile(String path, Map<String,StudentAttendance> students ) {
-		String regex = new String(";+");
-		BufferedReader reader;
+	public static void readStudentList(String path, Map<String,StudentAttendance> students) {
+		BufferedReader reader = null;
 		try {
 			//variables to read the file
 			reader = new BufferedReader(new FileReader(new File(path)));
 			String line = reader.readLine();
-			String[] tokens = line.split(regex);
+			String[] tokens = line.split(CSV_SEPARATOR);
 			//verify if the file have the same number columns we expect
 			if(tokens.length != 3) {
-				reader.close();
-				throw new RuntimeException("FileOperations : Not the file expected.");
+				throw new IOException();
 			}
 			//read each line until reach the end of the table
 			while((line = reader.readLine()) != null) {
-				tokens = line.split(regex);
-				if(tokens.length != 3)
-					break;
-				if (students.containsKey(tokens[0]))
-					students.get(tokens[0]).addShiftMax(Integer.parseInt(tokens[2]));
-				else
-					students.put(tokens[0], new StudentAttendance(tokens[0], tokens[1], Integer.parseInt(tokens[2])));
+				readStudentLine(line, students);
 			}
-			reader.close();
 		} catch (IOException e) {
-			throw new RuntimeException("ERROR: locDevCore - loadStudentList : I/O errors for this file:" + path);
+			throw new RuntimeException("ERROR: readStudentList : I/O errors for this file:" + path);
+		} finally {
+			try {
+				reader.close();
+			} catch (IOException e) {
+				throw new RuntimeException("ERROR: readStudentList : error closing file file:" + path);
+			}
 		}
 	}
 	
-	public static Map<String,StudentAttendance> readFenixStudentsFile(String path, int max_dates) {
-		String regex = new String(";+");
-		BufferedReader reader;
-		Map<String,StudentAttendance> students = new Hashtable<String,StudentAttendance>();
-		try {
-			//variables to read the file
-			reader = new BufferedReader(new FileReader(new File(path)));
-			String line = reader.readLine();
-			String[] tokens = line.split(regex);
-			//verify if the file have the same number columns we expect
-			if(tokens.length != 7 && tokens.length != 8) {
-				reader.close();
-				throw new RuntimeException("FileOperations : Not the file expected.");
-			}
-			//read each line until reach the end of the table
-			while((line = reader.readLine()) != null) {
-				tokens = line.split(regex);
-				if(tokens.length != 7 && tokens.length != 8)
-					break;
-				students.put(tokens[0], new StudentAttendance(tokens[0], tokens[3], max_dates));
-			}
-			reader.close();
-			return students;
-		} catch (IOException e) {
-			throw new RuntimeException("ERROR: locDevCore - loadStudentList : I/O errors for this file:" + path);
+	public static void readStudentLine(String line, Map<String,StudentAttendance> students) {
+		String[] tokens = line.split(CSV_SEPARATOR);
+		
+		if(tokens.length != 3) { 
+			new IOException(); 
+		}
+		if (!students.containsKey(tokens[0])) {
+			students.put(tokens[0], new StudentAttendance(tokens[0], tokens[1], Integer.parseInt(tokens[2])));
 		}
 	}
 	
@@ -127,16 +111,17 @@ public class FileOperations {
 	
 	public static String generateShiftPinsHeader(CourseManager course,Shift shift) {
 		StringBuilder header = new StringBuilder();
-		header.append("Course Name;");
+		header.append("Course Name");
+		header.append(CSV_SEPARATOR);
 		header.append(course.getCourseName());
 		header.append("\n");
-		header.append("Shift:;");
+		header.append("Shift");
+		header.append(CSV_SEPARATOR);
 		header.append(shift.getShiftName());
-		header.append(";");
-		header.append(ConvertWeekday.convert(shift.getWeekday()));
-		header.append(";");
 		header.append("\n");
-		header.append("Date;Pin\n");
+		header.append("Date");
+		header.append(CSV_SEPARATOR);
+		header.append("Pin\n");
 		return header.toString();
 	}
 	
@@ -158,7 +143,7 @@ public class FileOperations {
 		content.append(c.get(Calendar.MONTH) + 1);
 		content.append(c.get(Calendar.YEAR));
 		row.append(date);
-		row.append(";");
+		row.append(CSV_SEPARATOR);
 		try {
 			MessageDigest md = MessageDigest.getInstance("MD5");
 			md.update(content.toString().getBytes());
@@ -187,16 +172,16 @@ public class FileOperations {
 	
 	public static String generateAttendanceCSVHeader(CourseManager course, Set<String> dates) {
 		StringBuilder header = new StringBuilder();
-		header.append("Course Name" + CVS_SEPARATOR);
+		header.append("Course Name" + CSV_SEPARATOR);
 		header.append(course.getCourseName() + "\n");
-		header.append("Number" + CVS_SEPARATOR);
-		header.append("Name" + CVS_SEPARATOR);
-		header.append("Max#Presences" + CVS_SEPARATOR);
-		header.append("#Presences"+ CVS_SEPARATOR);
-		header.append("%Presences" + CVS_SEPARATOR);
+		header.append("Number" + CSV_SEPARATOR);
+		header.append("Name" + CSV_SEPARATOR);
+		header.append("Max#Presences" + CSV_SEPARATOR);
+		header.append("#Presences"+ CSV_SEPARATOR);
+		header.append("%Presences" + CSV_SEPARATOR);
 		for(String d : dates) {
 			header.append(d);
-			header.append(CVS_SEPARATOR);
+			header.append(CSV_SEPARATOR);
 		}
 		header.append("\n");
 		return header.toString();
@@ -219,20 +204,20 @@ public class FileOperations {
 		DecimalFormat df = new DecimalFormat("##.##");
 		Set<String> student_dates = student.getAttendanceDates();
 		row.append(student.getNumber());
-		row.append(CVS_SEPARATOR);
+		row.append(CSV_SEPARATOR);
 		row.append(student.getName());
-		row.append(CVS_SEPARATOR);
+		row.append(CSV_SEPARATOR);
 		row.append(student.getShiftMax());
-		row.append(CVS_SEPARATOR);
+		row.append(CSV_SEPARATOR);
 		row.append(student.getNbAttendance());
-		row.append(CVS_SEPARATOR);
+		row.append(CSV_SEPARATOR);
 		row.append(df.format(d));
-		row.append(CVS_SEPARATOR);
+		row.append(CSV_SEPARATOR);
 		for(String date : dates) {
 			if(student_dates.contains(date))
-				row.append("1" + CVS_SEPARATOR);
+				row.append("1" + CSV_SEPARATOR);
 			else 
-				row.append("0" + CVS_SEPARATOR);
+				row.append("0" + CSV_SEPARATOR);
 		}
 		row.append("\n");
 		return row.toString();
@@ -248,13 +233,13 @@ public class FileOperations {
 	public static String generateMetaInfoHeader(CourseManager course) {
 		StringBuilder header = new StringBuilder();
 		header.append(course.getCourseName()); 
-		header.append(";");
+		header.append(ROUTER_INFO_SEPARATOR);
 		header.append(ConvertDate.convert(course.getCourseStartDate(), "d-M-yyyy"));
-		header.append(";");
+		header.append(ROUTER_INFO_SEPARATOR);
 		header.append(ConvertDate.convert(course.getCourseEndDate(), "d-M-yyyy"));
-		header.append(";");
+		header.append(ROUTER_INFO_SEPARATOR);
 		header.append(course.getProfessorID());
-		header.append(";");
+		header.append(ROUTER_INFO_SEPARATOR);
 		header.append(course.getProfessorPassword());
 		header.append("\n");
 		return header.toString();
@@ -271,30 +256,25 @@ public class FileOperations {
 	public static String generateMetaInfoShift(Shift shift) {
 		StringBuilder sb_shift = new StringBuilder();
 		sb_shift.append(shift.getShiftName());
-		sb_shift.append(";");
+		sb_shift.append(ROUTER_INFO_SEPARATOR);
 		sb_shift.append(shift.getSeed());
-		sb_shift.append(";");
+		sb_shift.append(ROUTER_INFO_SEPARATOR);
 		sb_shift.append(shift.getShiftType());
-		sb_shift.append(";");
+		sb_shift.append(ROUTER_INFO_SEPARATOR);
 		sb_shift.append(ConvertWeekday.convert(shift.getWeekday()));
-		sb_shift.append(";");
+		sb_shift.append(ROUTER_INFO_SEPARATOR);
 		sb_shift.append(shift.getStartTime().getStringHours());
-		sb_shift.append(";");
+		sb_shift.append(ROUTER_INFO_SEPARATOR);
 		sb_shift.append(shift.getStartTime().getStringMinutes());
-		sb_shift.append(";");
+		sb_shift.append(ROUTER_INFO_SEPARATOR);
 		sb_shift.append(shift.getRoom());
-		sb_shift.append(";");
+		sb_shift.append(ROUTER_INFO_SEPARATOR);
 		sb_shift.append(shift.getMaxDelay().getStringHours());
-		sb_shift.append(";");
+		sb_shift.append(ROUTER_INFO_SEPARATOR);
 		sb_shift.append(shift.getMaxDelay().getStringMinutes());
-		sb_shift.append(";");
-		if (shift.getStudentsListPath().equals(locDevCore.BUFFER_FILE)) {
-			sb_shift.append(locDevCore.NAME_BY_DEFAULT);
-		}
-		else {
-			String[] tokens = shift.getStudentsListPath().split("[/|\\\\]");
-			sb_shift.append(tokens[tokens.length -1]);
-		}
+		sb_shift.append(ROUTER_INFO_SEPARATOR);
+		String[] tokens = shift.getStudentsListPath().split("[/|\\\\]");
+		sb_shift.append(tokens[tokens.length -1]);
 		sb_shift.append("\n");
 		return sb_shift.toString();
 	}
@@ -316,7 +296,7 @@ public class FileOperations {
 	
 	public static void readCourseMetaInfo(CourseManager course, String line) 
 			throws InvalidFormatMetaInfoFileException {
-		String[] tokens = line.split(";");
+		String[] tokens = line.split(ROUTER_INFO_SEPARATOR);
 		if(tokens.length != 5) {
 			throw new InvalidFormatMetaInfoFileException(
 					"CSVOperations: readCouseMetaInfo - not the format expected.");
@@ -330,7 +310,7 @@ public class FileOperations {
 	
 	public static void readShiftMetaInfo(CourseManager course, String line) 
 			throws InvalidFormatMetaInfoFileException {
-		String[] tokens = line.split(";");		
+		String[] tokens = line.split(ROUTER_INFO_SEPARATOR);		
 		if(tokens.length != 10) {
 			throw new InvalidFormatMetaInfoFileException(
 					"CSVOperations: readShiftMetaInfo - not the format expected.");
@@ -347,39 +327,22 @@ public class FileOperations {
 				        tokens[1]);
 	}
 	
-	public static boolean verifyFormatStudentList(String source) {
-		try {
-			BufferedReader reader = new BufferedReader(new FileReader(new File(source)));
-			String line = reader.readLine();
-			reader.close();
-			String[] tokens = line.split(";");
-			if (tokens.length == 3)
-				return true;
-			return false;
-		} catch (IOException e) {
-			throw new RuntimeException("FileOperations : verifyFormatStudentList - IO problems.");
-		}
-	}
-	
 	public static void generateStudentListCSV(String source, String dest, int max) {
-		//Verify the format
-		boolean new_format = verifyFormatStudentList(source); 
 		Map<String, StudentAttendance> map = new HashMap<String, StudentAttendance>();
-		if (new_format) {
-			readRouterStudentsFile(source, map);			
-		}
-		else {
-			map = readFenixStudentsFile(source, max);			
-		}
+		readStudentList(source, map);
 		//Write New file
 		try {
 			StringBuilder sb = new StringBuilder();
-			sb.append("Number;Name;Max Presences\n");
+			sb.append("Number");
+			sb.append(CSV_SEPARATOR);
+			sb.append("Max");
+			sb.append(CSV_SEPARATOR);
+			sb.append("Presences\n"); 
 			for(StudentAttendance student : map.values()) {
 				sb.append(student.getNumber());
-				sb.append(";");
+				sb.append(CSV_SEPARATOR);
 				sb.append(student.getName());
-				sb.append(";");
+				sb.append(CSV_SEPARATOR);
 				sb.append(student.getShiftMax());
 				sb.append("\n");
 			}
@@ -391,6 +354,7 @@ public class FileOperations {
 		}	
 	}
 	
+	// TODO - is this needed?
 	public static Map<String, StudentAttendance> readAttendanceCSV(String path, CourseManager course) 
 			throws InvalidFormatMetaInfoFileException, NotTheSameCourseInfoException {
 		try {
@@ -399,7 +363,7 @@ public class FileOperations {
 			readAttendanceCSVHeader(line, course);
 			line = reader.readLine(); //ignore new line
 			line = reader.readLine(); //this is the header get the size of each row
-			String[] tokens = line.split(";");
+			String[] tokens = line.split(CSV_SEPARATOR);
 			String[] dates = readAttendanceCSVDates(tokens);
 			Map<String, StudentAttendance> students = new HashMap<String,StudentAttendance>();
 			while((line = reader.readLine()) != null) {
@@ -413,8 +377,10 @@ public class FileOperations {
 		}
 	}
 	
-	public static void readAttendanceCSVHeader(String line, CourseManager course) throws InvalidFormatMetaInfoFileException, NotTheSameCourseInfoException {
-		String[] tokens = line.split(";");
+	// TODO - is this needed?
+	public static void readAttendanceCSVHeader(String line, CourseManager course) 
+			throws InvalidFormatMetaInfoFileException, NotTheSameCourseInfoException {
+		String[] tokens = line.split(CSV_SEPARATOR);
 		if(tokens.length != 2) {
 			throw new InvalidFormatMetaInfoFileException(
 					"FileOperations: readAttendanceCSVHeader - not the format expected.");
@@ -424,6 +390,7 @@ public class FileOperations {
 		throw new NotTheSameCourseInfoException("FileOperations: readAttendanceCSVHeader - not the same course.");
 	}
 	
+	// TODO - is this needed?
 	public static String[] readAttendanceCSVDates(String[] tokens) 
 			throws InvalidFormatMetaInfoFileException {
 		if(tokens.length < 5) {
@@ -437,6 +404,7 @@ public class FileOperations {
 		return dates;
 	}
 	
+	// TODO - is this needed?
 	public static StudentAttendance readAttendanceCSVRow(String line, String[] dates) 
 			throws InvalidFormatMetaInfoFileException {
 		String[] tokens = line.split(";");

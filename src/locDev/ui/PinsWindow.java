@@ -42,7 +42,6 @@ import locDev.exceptions.InvalidFormatMetaInfoFileException;
 import locDev.types.Shift;
 import locDev.ui.handlers.ClosePinsHandler;
 import locDev.ui.handlers.GeneratePinsTableHandler;
-import locDev.util.converter.ConvertWeekday;
 
 /**
  * 

@@ -62,8 +62,6 @@ public class GeneratePinsTableHandler implements ActionListener {
 	    for (Component c : window.getCheckBoxes()) {
 	        if (c instanceof JCheckBox && ((JCheckBox)c).isSelected()) { 
 	        	String name = ((JCheckBox)c).getText();
-	        	// FIXME - split by hyphen is buggy.
-	        	//name = name.split("-")[0];
 	        	shifts.add(course.getShifts().get(name));
 	        }
 	    }
