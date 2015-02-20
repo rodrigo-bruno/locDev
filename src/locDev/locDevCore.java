@@ -275,7 +275,7 @@ public class locDevCore {
 		}
 		//	2 - save each weekday until reach end date
 		while (begin.before(end) || begin.equals(end)) {
-			String s_date = ConvertDate.convert(begin.getTime(), "d-M-yyyy-H-m");
+			String s_date = ConvertDate.convert(begin.getTime(), "yyyy-M-d-H-m");
 			set.add(s_date);
 			begin.add(Calendar.DAY_OF_YEAR, 7);
 		}
