@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -44,7 +43,6 @@ import locDev.exceptions.NotTheSameCourseInfoException;
 import locDev.types.Shift;
 import locDev.types.StudentAttendance;
 import locDev.types.Time;
-import locDev.util.converter.ConvertCalendar;
 import locDev.util.converter.ConvertDate;
 import locDev.util.converter.ConvertWeekday;
 
@@ -138,10 +136,12 @@ public class FileOperations {
 		StringBuilder content = new StringBuilder();
 		content.append(shift.getShiftName());
 		content.append(shift.getSeed());
-		Calendar c = ConvertCalendar.convert(ConvertDate.convert(date), shift.getStartTime());
-		content.append(c.get(Calendar.DAY_OF_MONTH));
-		content.append(c.get(Calendar.MONTH) + 1);
-		content.append(c.get(Calendar.YEAR));
+		// Example date: 2015-9-24-16-0 (year,month,day,hour,minute)
+		String[] sdate = date.split("-");
+		content.append(sdate[2]);
+		content.append(sdate[1]);
+		content.append(sdate[0]);
+		
 		row.append(date);
 		row.append(CSV_SEPARATOR);
 		try {
